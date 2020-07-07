@@ -1,0 +1,282 @@
+#include "FastLED.h"
+
+// LEDs pin
+#define DATA_PIN 6
+
+// LED brightness
+#define BRIGHTNESS 255
+
+#define NUM_LEDS 300
+
+#define BPM 142
+
+// Define the array of leds
+CRGB leds[NUM_LEDS];
+
+long previousMillis = 0;
+
+void setup() {
+  FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);
+  FastLED.setBrightness(BRIGHTNESS);
+  Serial.begin(9600);
+}
+
+void flash(long long part) {
+  part = int(part/10);
+  if(part%2 == 0){
+    for(int i = 0; i < NUM_LEDS; i++){
+      if (i%40 == 0){
+        for(int j=0; j < 20; j++){
+          leds[i+j] = CHSV(255,0,BRIGHTNESS);
+        }
+      }
+      }
+    }
+
+  else{
+    for(int i = 0; i < NUM_LEDS; i++){
+      if (i%40 == 20){
+        for(int j=0; j < 20; j++){
+          leds[i+j] = CHSV(255,0,BRIGHTNESS);
+        }
+      }
+  }
+}
+}
+void fades(int place,int color) {
+  int count = 0;
+  float ms = 60000/BPM;
+  int full_beat = ms*4;
+  float steps = (full_beat/2)/255;
+
+  place = place%full_beat;
+
+  int brightness;
+
+  if(place < ms*2){
+    brightness = ((205/(ms*2))*place)+50;
+  }
+  else{
+    brightness = -(((205/(ms*2))*place)+50)+510;
+  }
+
+  for(int i = 0; i < NUM_LEDS; i++){
+    leds[i] = CHSV(color,255,brightness);
+    }  
+}
+
+void slowfades(int place,int color) {
+  int count = 0;
+  float ms = 60000/BPM;
+  int full_beat = ms*4;
+  float steps = (full_beat/2)/255;
+
+  int brightness;
+
+  place = place%(full_beat*4);
+
+  if(place <= ms*8){
+    brightness = ((245/(ms*8))*place+10);
+  }
+  else{
+    brightness = -(((245/(ms*8))*place)+10)+510;
+  }
+
+  for(int i = 0; i < NUM_LEDS; i++){
+    leds[i] = CHSV(color,255,brightness);
+    }
+    
+}
+
+boolean finished = false;
+
+void loading(int stage, int length_of_strips, int color){
+  int beats = BPM;
+
+  int current_length = ((60000/beats)*16)/length_of_strips;
+
+  int count = 0;
+  while(stage > current_length){
+    stage -= current_length;
+    count ++;
+  }
+
+  for(int i = 0; i < NUM_LEDS; i++){
+    if(i%length_of_strips == 1){
+      for(int j = 0; j < count; j++){
+        leds[i+j] = CHSV(color,255,255);
+      }
+    }
+  }
+}
+
+int subtract = 0;
+
+int get_stage(long ms){
+  Serial.print(ms);
+  Serial.println();
+  if(ms > (((60000/BPM)*16)*23)+subtract){
+    return 24;
+  }
+  else if(ms > (((60000/BPM)*16)*22)+subtract){
+    return 23;
+  }
+  else if(ms > (((60000/BPM)*16)*21)+2660){
+    return 22;
+  }
+  else if(ms > (((60000/BPM)*16)*20)+2660){
+    return 21;
+  }
+  else if(ms > (((60000/BPM)*16)*19)+2660){
+    return 20;
+  }
+  else if(ms > (((60000/BPM)*16)*18)+2660){
+    return 19;
+  }
+  else if(ms > (((60000/BPM)*16)*17)+2660){
+    return 18;
+  }
+  else if(ms > (((60000/BPM)*16)*16)+2660){
+    return 17;
+  }
+  else if(ms > (((60000/BPM)*16)*15)+2660){
+    return 16;
+  }
+  else if(ms > (((60000/BPM)*16)*14)+2660){
+    return 15;
+  }
+  else if(ms > (((60000/BPM)*16)*13)+2660){
+    return 14;
+  }
+  else if(ms > (((60000/BPM)*16)*12)+2660){
+    return 13;
+  }
+  else if(ms > (((60000/BPM)*16)*11)+2660){
+    return 12;
+  }
+  else if(ms > (((60000/BPM)*16)*10)+2660){
+    subtract = 2660;
+    return 11;
+  }
+  else if(ms > ((60000/BPM)*16)*9){
+    return 10;
+  }
+  else if(ms > ((60000/BPM)*16)*8){
+    return 9;
+  }
+  else if(ms > ((60000/BPM)*16)*7){
+    return 8;
+  }
+  else if(ms > ((60000/BPM)*16)*6){
+    return 7;
+  }
+  else if(ms > ((60000/BPM)*16)*5){
+    return 6;
+  }
+  else if(ms > ((60000/BPM)*16)*4){
+    return 5;
+  }
+  else if(ms > ((60000/BPM)*16)*3){
+    return 4;
+  }
+  else if(ms > ((60000/BPM)*16)*2){
+    return 3;
+  }
+  else if(ms > ((60000/BPM)*16)*1){
+    return 2;
+  }
+  else if(ms > ((60000/BPM)*16)*0){
+    return 1;
+  }
+}
+
+void pause(int place){
+  for(int i = 0; i < NUM_LEDS; i++){
+    leds[i] = CHSV(0,0,0);
+    }
+}
+
+void loop() {
+  unsigned long long currentMillis = millis();
+  int stage = get_stage(currentMillis);
+  //Serial.print(stage);
+  //Serial.println();
+  currentMillis -= subtract;
+  currentMillis = currentMillis%((60000/BPM)*16); //4 beat
+
+  if(stage == 1){
+    loading(currentMillis,10,128);
+  }
+  if(stage == 2 or stage == 3 or stage == 7){
+    slowfades(currentMillis,1);
+  }
+  if(stage == 4 or stage == 6 or stage == 5){
+    slowfades(currentMillis,16);
+  }
+  if(stage == 8){
+    slowfades(currentMillis,200);
+  }
+  if(stage == 9){
+      slowfades(currentMillis,27);
+    }
+  if(stage == 10){
+    pause(currentMillis);
+  }
+  if(stage == 11){
+    slowfades(currentMillis+800,0);
+    flash(currentMillis);
+  }
+  if(stage == 12){
+    fades(currentMillis,0);
+    loading(currentMillis,5,178);
+  }
+  if(stage == 13){
+    fades(currentMillis,12);
+    loading(currentMillis,10,27);
+  }
+  if(stage == 14){
+    fades(currentMillis,6);
+    loading(currentMillis,15,50);
+  }
+  if(stage == 15){
+    fades(currentMillis,18);
+    loading(currentMillis,20,208);
+  }
+  if(stage == 16){
+    fades(currentMillis,0);
+    loading(currentMillis,25,27);
+  }
+  if(stage == 17){
+    fades(currentMillis,24);
+    loading(currentMillis,30,128);
+  }
+  if(stage == 18){
+    fades(currentMillis,12);
+    loading(currentMillis,35,182);
+  }
+  if(stage == 19){
+    fades(currentMillis,6);
+    loading(currentMillis,35,27);
+  }
+  if(stage == 20){
+    fades(currentMillis,6);
+    loading(currentMillis,0,273);
+  }
+  if(stage == 21){
+    fades(currentMillis,6);
+    loading(currentMillis,60,0);
+  }
+  if(stage == 22){
+    fades(currentMillis,6);
+    loading(currentMillis,273,60);
+  }
+  if(stage == 23){
+    fades(currentMillis,6);
+    loading(currentMillis,0,32);
+  }
+  if(stage >= 24){
+    fades(currentMillis,6);
+    loading(currentMillis,33,273);
+  }
+  FastLED.show();
+}
